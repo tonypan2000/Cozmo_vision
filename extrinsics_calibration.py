@@ -3,8 +3,6 @@ import cozmo
 import cv2
 import numpy as np
 from apriltags3 import Detector
-import time
-import math
 
 from cozmo.util import degrees
 
@@ -29,9 +27,38 @@ def cozmo_program(robot: cozmo.robot.Robot):
                              [0.15 + 0.0254, -0.0254 / 2, -.057 + 0.0254 / 2],
                              [0.15, 0.0254 / 2, -.057 + (3 * 0.0254 / 2)],
                              [0.15 + 0.0254, -0.0254 / 2, -.057 + (3 * .0254 / 2)]])
+
+    detector = Detector("tagStandard41h12", quad_decimate=2.0, quad_sigma=1.0, debug=False)
+
+    # create main window
+    cv2.namedWindow("camera", 1)
+
+    while True:
+        ch = 0xFF & cv2.waitKey(10)
+        # convert Bayer GB to RGB for display
+        image = robot.world.latest_image.raw_image
+        img = np.array(image)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # convert Bayer BG to Grayscale for corner detections
+        tags = detector.detect(gray, estimate_tag_pose=True, camera_params=cameraMatrix, tag_size=0.0127)
+        # visualize the detection
+        for tag in tags:
+            for idx in range(len(tag.corners)):
+                cv2.line(gray, tuple(tag.corners[idx - 1, :].astype(int)),
+                         tuple(tag.corners[idx, :].astype(int)), (255, 0, 0))
+
+            # label the id of AprilTag on the image.
+            cv2.putText(gray, str(tag.tag_id),
+                        org=(tag.corners[0, 0].astype(int) + 10, tag.corners[0, 1].astype(int) + 10),
+                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                        fontScale=1,
+                        color=(255, 0, 0))
+        # continue until ESC
+        if ch == 27:
+            break
+
     # Use the center of the tags as image points. Make sure they correspond to the 3D points.
-    imagePoints = np.array([tag.center for tag in self.tags])
-    assert (len(self.tags) == 4)
+    imagePoints = np.array([tag.center for tag in tags])
+    assert (len(tags) == 4)
     print("Image Points: ", imagePoints)
     success, rvec, tvec = cv2.solvePnP(objectPoints, np.array(imagePoints), cameraMatrix, None)
     rotation_matrix, _ = cv2.Rodrigues(rvec)
