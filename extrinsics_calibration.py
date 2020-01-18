@@ -18,15 +18,14 @@ def cozmo_program(robot: cozmo.robot.Robot):
     robot.set_head_angle(degrees(0)).wait_for_completed()
 
     # intrinsics from calibration.cfg
-    cameraMatrix = np.array([[288.15418237, 0, 197.31722863],
-                             [0, 285.12686892, 120.45748409],
-                             [0, 0, 1]])
+    cameraParam = [288.15418237, 285.12686892, 197.31722863, 120.45748409]  # [fx, fy, cx, cy]
+    cameraMatrix = np.array([[288.15418237, 0, 197.31722863], [0, 285.12686892, 120.45748409], [0, 0, 1]])
     # 3D coordinates of the center of AprilTags in the arm frame in meters.
-                    #           x         y           x (meters in Cozmo camera coordinate frame)
-    objectPoints = np.array([[0.15, 0.0254 / 2, -.057 + 0.0254 / 2],
-                             [0.15 + 0.0254, -0.0254 / 2, -.057 + 0.0254 / 2],
-                             [0.15, 0.0254 / 2, -.057 + (3 * 0.0254 / 2)],
-                             [0.15 + 0.0254, -0.0254 / 2, -.057 + (3 * .0254 / 2)]])
+                    #           x         y           z (meters in Cozmo camera coordinate frame)
+    objectPoints = np.array([[0.15, 0.0254 / 2, 3 * 0.0254 / 2],
+                             [0.15 + 0.0254, -0.0254 / 2, 3 * 0.0254 / 2],
+                             [0.15, 0.0254 / 2, 0.0254 / 2],
+                             [0.15 + 0.0254, -0.0254 / 2, 0.0254 / 2]])
 
     detector = Detector("tagStandard41h12", quad_decimate=2.0, quad_sigma=1.0, debug=False)
 
@@ -39,7 +38,7 @@ def cozmo_program(robot: cozmo.robot.Robot):
         image = robot.world.latest_image.raw_image
         img = np.array(image)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # convert Bayer BG to Grayscale for corner detections
-        tags = detector.detect(gray, estimate_tag_pose=True, camera_params=cameraMatrix, tag_size=0.0127)
+        tags = detector.detect(gray, estimate_tag_pose=True, camera_params=cameraParam, tag_size=0.0127)
         # visualize the detection
         for tag in tags:
             for idx in range(len(tag.corners)):
@@ -52,6 +51,7 @@ def cozmo_program(robot: cozmo.robot.Robot):
                         fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale=1,
                         color=(255, 0, 0))
+        cv2.imshow('AprilTags', gray)
         # continue until ESC
         if ch == 27:
             break
@@ -70,6 +70,15 @@ def cozmo_program(robot: cozmo.robot.Robot):
     # homogeneous matrix from camera coordinates to robot coordinates
     extrinsic = np.linalg.inv(affine_transformation)
     print("extrinsic: ", extrinsic)
+
+    for tag in tags:
+        homo = np.array([[tag.pose_R[0][0], tag.pose_R[0][1], tag.pose_R[0][2], tag.pose_t[0]],
+                         [tag.pose_R[1][0], tag.pose_R[1][1], tag.pose_R[1][2], tag.pose_t[1]],
+                         [tag.pose_R[2][0], tag.pose_R[2][1], tag.pose_R[2][2], tag.pose_t[2]],
+                         [0.0, 0.0, 0.0, 1.0]], dtype='float')
+        tag_pose = np.matmul(homo, np.array([0, 0, 0.0125, 1]))
+        arm_pose = np.matmul(extrinsic, tag_pose)
+        print("true pose", arm_pose)
 
     f = open('extrinsics.cfg', 'w')
     f.write("extrinsics matrix:\r\n")
