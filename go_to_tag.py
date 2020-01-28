@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from apriltags3 import Detector
 
-from cozmo.util import degrees
+from cozmo.util import degrees, distance_mm, speed_mmps
 
 try:
     from PIL import ImageDraw, ImageFont, Image, ImageTk
@@ -30,6 +30,7 @@ def cozmo_program(robot: cozmo.robot.Robot):
     cv2.namedWindow("AprilTag Detection", 1)
 
     while True:
+        robot.set_head_angle(degrees(0)).wait_for_completed()
         ch = 0xFF & cv2.waitKey(10)
         # convert Bayer GB to RGB for display
         image = robot.world.latest_image.raw_image
@@ -57,7 +58,13 @@ def cozmo_program(robot: cozmo.robot.Robot):
                         color=(255, 0, 0))
         cv2.imshow('AprilTags', gray)
         if len(tags) > 0:
-            
+            # first turn towards target
+            angle = np.rad2deg(np.arctan2(pose_in_Cozmo[1], pose_in_Cozmo[0]))
+            robot.turn_in_place(degrees(angle)).wait_for_completed()
+            # then drive straight
+            distance = np.sqrt(pose_in_Cozmo[0] ** 2 + pose_in_Cozmo[1] ** 2) * 1000
+            robot.drive_straight(distance_mm(distance), speed_mmps(50)).wait_for_completed()
+
         # continue until ESC
         if ch == 27:
             break
