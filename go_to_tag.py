@@ -55,8 +55,9 @@ def cozmo_program(robot: cozmo.robot.Robot):
                         fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale=0.3,
                         color=(255, 0, 0))
-
         cv2.imshow('AprilTags', gray)
+        if len(tags) > 0:
+            
         # continue until ESC
         if ch == 27:
             break
