@@ -18,7 +18,6 @@ def cozmo_program(robot: cozmo.robot.Robot):
     robot.set_head_angle(degrees(0)).wait_for_completed()
     # intrinsics from calibration.cfg
     cameraParam = [288.15418237, 285.12686892, 197.31722863, 120.45748409]  # [fx, fy, cx, cy]
-    cameraMatrix = np.array([[288.15418237, 0, 197.31722863], [0, 285.12686892, 120.45748409], [0, 0, 1]])
     extrinsic = np.array([[-9.97469913e-02, -5.61812756e-02, 9.93425489e-01, -2.40474116e-02],
                           [-9.94999768e-01, 5.15631732e-04, -9.98758996e-02, -4.49931548e-03],
                           [5.09891373e-03, -9.98420452e-01, -5.59517889e-02, 3.75532293e-02],

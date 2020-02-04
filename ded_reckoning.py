@@ -12,9 +12,9 @@ def cozmo_program(robot: cozmo.robot.Robot):
     #         robot.go_to_pose(coord).wait_for_completed()
 
     ''' relative motion '''
-    trajectory = [Pose(400, 0, 0, angle_z=degrees(90)), Pose(250, 0, 0, angle_z=degrees(90))]
+    trajectory = [Pose(100, 0, 0, angle_z=degrees(0)), Pose(0, 100, 0, angle_z=degrees(90)), Pose(0, 100, 0, angle_z=degrees(180)), Pose(0, 100, 0, angle_z=degrees(270))]
     # goes around a block four times
-    for i in range(8):
+    for i in range(4):
         for coord in trajectory:
             robot.go_to_pose(coord, relative_to_robot=True).wait_for_completed()
 
