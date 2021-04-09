@@ -47,7 +47,7 @@ def cozmo_program(robot: cozmo.robot.Robot):
                              [tag.pose_R[1][0], tag.pose_R[1][1], tag.pose_R[1][2], tag.pose_t[1]],
                              [tag.pose_R[2][0], tag.pose_R[2][1], tag.pose_R[2][2], tag.pose_t[2]],
                              [0.0, 0.0, 0.0, 1.0]], dtype='float')
-            tag_pose = np.matmul(rot_mat, np.array([0, 0, 0.0125, 1]))
+            tag_pose = np.matmul(rot_mat, np.array([0, 0.0125, 0.0125, 1]))
             pose_in_Cozmo = np.matmul(extrinsic, tag_pose)
             # label the id of AprilTag on the image.
             cv2.putText(gray, str(pose_in_Cozmo),
